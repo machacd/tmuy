@@ -62,19 +62,31 @@ cycle_word() {
     # Check if we should reset the cycle or continue
     local reset_cycle=false
     
+    echo "=== CYCLE DEBUG ===" >> /tmp/cycle_debug.log
+    echo "current_word='$current_word'" >> /tmp/cycle_debug.log
+    echo "original_word='$original_word'" >> /tmp/cycle_debug.log
+    echo "last_completed='$last_completed'" >> /tmp/cycle_debug.log
+    echo "pane_id='$pane_id', last_pane='$last_pane'" >> /tmp/cycle_debug.log
+    
     # Reset if different pane
     if [[ "$pane_id" != "$last_pane" ]]; then
         reset_cycle=true
-    # Reset if current word doesn't match original word and isn't a completion
-    elif [[ "$current_word" != "$original_word"* ]] && [[ "$current_word" != "$last_completed" ]]; then
-        reset_cycle=true
-    # Continue cycle if current word matches the last completion
-    elif [[ "$current_word" == "$last_completed" ]]; then
-        reset_cycle=false
+        echo "RESET: Different pane" >> /tmp/cycle_debug.log
     # Reset if original word is empty (first time)
     elif [[ -z "$original_word" ]]; then
         reset_cycle=true
+        echo "RESET: Empty original word (first time)" >> /tmp/cycle_debug.log
+    # Continue cycle if current word matches the last completion exactly
+    elif [[ "$current_word" == "$last_completed" ]]; then
+        reset_cycle=false
+        echo "CONTINUE: Current word matches last completion" >> /tmp/cycle_debug.log
+    # Reset if current word is different from both original word and last completion
+    else
+        reset_cycle=true
+        echo "RESET: Current word '$current_word' doesn't match original '$original_word' or last completion '$last_completed'" >> /tmp/cycle_debug.log
     fi
+    
+    echo "reset_cycle=$reset_cycle" >> /tmp/cycle_debug.log
     
     if [[ "$reset_cycle" == "true" ]]; then
         original_word="$current_word"
@@ -101,18 +113,40 @@ cycle_word() {
     # Update cycle index
     cycle_index=$(( (cycle_index + 1) % ${#words[@]} ))
     
-    # Save state with the completed word
-    echo "$original_word:$cycle_index:$pane_id:$selected_word" > "$STATE_FILE"
+    # Calculate how many characters to delete
+    local chars_to_delete
+    if [[ "$reset_cycle" == "false" && -n "$last_completed" ]]; then
+        # When cycling, only delete the suffix that was added by the previous completion
+        # Keep the original partial word (e.g., keep "r", delete "epeat" from "repeat")
+        chars_to_delete=$((${#last_completed} - ${#original_word}))
+        echo "CYCLING: Deleting $chars_to_delete chars (suffix of '$last_completed', keeping '$original_word')" >> /tmp/cycle_debug.log
+    else
+        # Starting new cycle, delete the original partial word to replace it entirely
+        chars_to_delete=${#current_word}
+        echo "NEW CYCLE: Deleting $chars_to_delete chars of '$current_word'" >> /tmp/cycle_debug.log
+    fi
     
-    # Calculate how many characters to delete (current word length)
-    local chars_to_delete=${#current_word}
-    
-    # Send backspaces to delete current partial word, then type the new word
+    # Send backspaces to delete current word, then type the new word
     for ((i=0; i<chars_to_delete; i++)); do
         tmux send-keys -t "$pane_id" "C-h"
     done
     
-    tmux send-keys -t "$pane_id" "$selected_word"
+    # When cycling, only type the suffix of the new word (after the original partial word)
+    # When starting new cycle, type the entire selected word
+    if [[ "$reset_cycle" == "false" && -n "$original_word" ]]; then
+        local suffix="${selected_word:${#original_word}}"
+        echo "CYCLING: Typing suffix '$suffix' of '$selected_word'" >> /tmp/cycle_debug.log
+        tmux send-keys -t "$pane_id" "$suffix"
+    else
+        echo "NEW CYCLE: Typing full word '$selected_word'" >> /tmp/cycle_debug.log
+        tmux send-keys -t "$pane_id" "$selected_word"
+    fi
+    
+    echo "FINAL STATE: '$original_word:$cycle_index:$pane_id:$selected_word'" >> /tmp/cycle_debug.log
+    echo "===================" >> /tmp/cycle_debug.log
+    
+    # Save state with the completed word
+    echo "$original_word:$cycle_index:$pane_id:$selected_word" > "$STATE_FILE"
 }
 
 # Main function
