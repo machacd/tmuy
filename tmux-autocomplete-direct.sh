@@ -16,13 +16,7 @@ current_line=$(tmux capture-pane -t "$pane_id" -p | sed -n "$((cursor_y + 1))p")
 before_cursor="${current_line:0:$cursor_x}"
 current_word=$(echo "$before_cursor" | grep -oE '[a-zA-Z0-9_]+$' || echo "")
 
-echo "DEBUG: cursor_x=$cursor_x, cursor_y=$cursor_y" >> /tmp/debug.log
-echo "DEBUG: current_line='$current_line'" >> /tmp/debug.log
-echo "DEBUG: before_cursor='$before_cursor'" >> /tmp/debug.log
-echo "DEBUG: current_word='$current_word'" >> /tmp/debug.log
-
 if [[ -z "$current_word" ]]; then
-    echo "DEBUG: No current word found" >> /tmp/debug.log
     exit 0
 fi
 
@@ -40,9 +34,26 @@ fi
 original_word=$(echo "$state_info" | cut -d: -f1)
 cycle_index=$(echo "$state_info" | cut -d: -f2)
 last_pane=$(echo "$state_info" | cut -d: -f3)
+last_completed=$(echo "$state_info" | cut -d: -f4)
 
-# Reset if new word or pane
-if [[ "$current_word" != "$original_word"* ]] || [[ "$pane_id" != "$last_pane" ]]; then
+# Check if we should reset the cycle or continue
+reset_cycle=false
+
+# Reset if different pane
+if [[ "$pane_id" != "$last_pane" ]]; then
+    reset_cycle=true
+# Reset if current word doesn't match original word and isn't a completion
+elif [[ "$current_word" != "$original_word"* ]] && [[ "$current_word" != "$last_completed" ]]; then
+    reset_cycle=true
+# Continue cycle if current word matches the last completion
+elif [[ "$current_word" == "$last_completed" ]]; then
+    reset_cycle=false
+# Reset if original word is empty (first time)
+elif [[ -z "$original_word" ]]; then
+    reset_cycle=true
+fi
+
+if [[ "$reset_cycle" == "true" ]]; then
     original_word="$current_word"
     cycle_index=0
 fi
@@ -62,7 +73,7 @@ selected_word="${words[$cycle_index]}"
 cycle_index=$(( (cycle_index + 1) % ${#words[@]} ))
 
 # Save state
-echo "$original_word:$cycle_index:$pane_id" > "$STATE_FILE"
+echo "$original_word:$cycle_index:$pane_id:$selected_word" > "$STATE_FILE"
 
 # Delete current word and type new one
 chars_to_delete=${#current_word}

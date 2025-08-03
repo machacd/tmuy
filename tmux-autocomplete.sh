@@ -57,9 +57,26 @@ cycle_word() {
     local original_word=$(echo "$state_info" | cut -d: -f1)
     local cycle_index=$(echo "$state_info" | cut -d: -f2)
     local last_pane=$(echo "$state_info" | cut -d: -f3)
+    local last_completed=$(echo "$state_info" | cut -d: -f4)
     
-    # If this is a new word or different pane, reset cycling
-    if [[ "$current_word" != "$original_word"* ]] || [[ "$pane_id" != "$last_pane" ]]; then
+    # Check if we should reset the cycle or continue
+    local reset_cycle=false
+    
+    # Reset if different pane
+    if [[ "$pane_id" != "$last_pane" ]]; then
+        reset_cycle=true
+    # Reset if current word doesn't match original word and isn't a completion
+    elif [[ "$current_word" != "$original_word"* ]] && [[ "$current_word" != "$last_completed" ]]; then
+        reset_cycle=true
+    # Continue cycle if current word matches the last completion
+    elif [[ "$current_word" == "$last_completed" ]]; then
+        reset_cycle=false
+    # Reset if original word is empty (first time)
+    elif [[ -z "$original_word" ]]; then
+        reset_cycle=true
+    fi
+    
+    if [[ "$reset_cycle" == "true" ]]; then
         original_word="$current_word"
         cycle_index=0
         
@@ -84,8 +101,8 @@ cycle_word() {
     # Update cycle index
     cycle_index=$(( (cycle_index + 1) % ${#words[@]} ))
     
-    # Save state
-    echo "$original_word:$cycle_index:$pane_id" > "$STATE_FILE"
+    # Save state with the completed word
+    echo "$original_word:$cycle_index:$pane_id:$selected_word" > "$STATE_FILE"
     
     # Calculate how many characters to delete (current word length)
     local chars_to_delete=${#current_word}
@@ -100,7 +117,16 @@ cycle_word() {
 
 # Main function
 main() {
-    local pane_id="${1:-$(tmux display-message -p '#{pane_id}')}"
+    local pane_target="$1"
+    local pane_id
+    
+    # Convert pane target to actual pane ID
+    if [[ -n "$pane_target" ]]; then
+        pane_id=$(tmux display-message -p -t "$pane_target" '#{pane_id}')
+    else
+        pane_id=$(tmux display-message -p '#{pane_id}')
+    fi
+    
     local current_word=$(get_current_word "$pane_id")
     
     # If no partial word, do nothing
