@@ -14,7 +14,7 @@ cursor_y=$(tmux display-message -p -t "$pane_id" '#{cursor_y}')
 # Get current line and extract word
 current_line=$(tmux capture-pane -t "$pane_id" -p | sed -n "$((cursor_y + 1))p")
 before_cursor="${current_line:0:$cursor_x}"
-current_word=$(echo "$before_cursor" | grep -oE '[a-zA-Z0-9_]+$' || echo "")
+current_word=$(echo "$before_cursor" | grep -oE '[a-zA-Z0-9_/.-]+$' || echo "")
 
 if [[ -z "$current_word" ]]; then
     exit 0
@@ -55,9 +55,18 @@ if [[ "$reset_cycle" == "false" && -n "$original_word" ]]; then
     search_word="$original_word"
 fi
 
+# Extract words from all panes - both full paths and individual components
+# First get all pane content
 tmux list-panes -a -F '#{pane_id}' | while read -r pane; do
     tmux capture-pane -t "$pane" -p
-done | grep -oE '[a-zA-Z0-9_]{2,}' | grep "^$search_word" | sort -u | grep -v "^$search_word$" > "$WORDS_FILE"
+done > /tmp/tmux-autocomplete/all_content
+
+# Extract both full paths and components
+grep -oE '[a-zA-Z0-9_/.-]{2,}' /tmp/tmux-autocomplete/all_content > /tmp/tmux-autocomplete/full_words
+grep -oE '[a-zA-Z0-9_/.-]{2,}' /tmp/tmux-autocomplete/all_content | sed 's/[/.-]/\n/g' | grep -E '^[a-zA-Z0-9_]{2,}$' > /tmp/tmux-autocomplete/components
+
+# Combine and filter
+cat /tmp/tmux-autocomplete/full_words /tmp/tmux-autocomplete/components | grep "^$search_word" | sort -u | grep -v "^$search_word$" > "$WORDS_FILE"
 
 
 if [[ "$reset_cycle" == "true" ]]; then
