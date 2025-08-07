@@ -1,40 +1,61 @@
-# Tmux Autocomplete
+# tmux-completion
 
-A bash script that provides word autocompletion in tmux, similar to Emacs Alt+/ functionality. It cycles through words found in all tmux panes.
+A tmux plugin that provides emacs-style word completion with cycling functionality, similar to `Alt+/` in emacs.
 
-## Setup
+## Features
 
-1. Clone this repository or download the scripts
-2. Make the scripts executable:
+- **Word completion**: Complete partial words by searching through all panes
+- **Cycling**: Press the completion key multiple times to cycle through matches  
+- **Scrollback support**: Option to search through entire scrollback history
+- **Path component extraction**: Handles both full paths and individual components
+
+## Installation
+
+### Using TPM (Tmux Plugin Manager)
+
+Add this line to your `~/.tmux.conf`:
+
+```bash
+set -g @plugin 'machacd/tmuy'
+```
+
+Then press `prefix + I` to install.
+
+### Manual Installation
+
+1. Clone this repository:
    ```bash
-   chmod +x tmux-autocomplete-wrapper.sh tmux-autocomplete-direct.sh
+   git clone https://github.com/machacd/tmuy ~/.tmux/plugins/tmux-completion
    ```
 
-3. Add the following line to your `~/.tmux.conf`:
+2. Add this line to your `~/.tmux.conf`:
    ```bash
-   bind-key M-/ run-shell '/path/to/your/tmux-autocomplete-wrapper.sh'
-   ```
-   
-   Replace `/path/to/your/` with the actual path to the script. For example:
-   ```bash
-   bind-key M-/ run-shell '~/tmuy/tmux-autocomplete-wrapper.sh'
+   run-shell ~/.tmux/plugins/tmux-completion/tmux-completion/tmux-completion.tmux
    ```
 
-4. Reload your tmux configuration:
+3. Reload tmux configuration:
    ```bash
    tmux source-file ~/.tmux.conf
    ```
 
 ## Usage
 
-1. Position your cursor at the end of a partial word
-2. Press `Alt+/` to cycle through possible completions
-3. Continue pressing `Alt+/` to cycle through all matching words found in all tmux panes
+### Default Key Bindings
 
-## How it works
+- **`prefix + /`** - Complete word using visible pane content
+- **`prefix + ?`** - Complete word using entire scrollback history (larger word pool)
+- **`Alt+/`** - Direct completion (no prefix needed)
 
-The script:
-- Captures the current word under cursor
-- Searches all tmux panes for matching words
-- Cycles through completions with each invocation
-- Remembers the original word to cycle back to it
+### How It Works
+
+1. Type a partial word (e.g., `test`)
+2. Press the completion key (e.g., `prefix + /`)
+3. The word completes to the first match (e.g., `testing_function`)
+4. Press the completion key again to cycle to the next match (e.g., `test_variable`)
+5. Continue cycling through all available matches
+
+## Requirements
+
+- tmux 2.0+
+- bash
+- Standard Unix utilities (grep, sed, awk)
