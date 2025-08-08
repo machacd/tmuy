@@ -13,18 +13,6 @@ A tmux plugin that provides emacs-style word completion with cycling functionali
 
 ## Installation
 
-### Using TPM (Tmux Plugin Manager)
-
-Add this line to your `~/.tmux.conf`:
-
-```bash
-set -g @plugin 'machacd/tmuy'
-```
-
-Then press `prefix + I` to install.
-
-### Manual Installation
-
 1. Clone this repository:
    ```bash
    git clone https://github.com/machacd/tmuy ~/.tmux/plugins/tmuy
