@@ -34,9 +34,6 @@ A tmux plugin that provides emacs-style word completion with cycling functionali
 
 - **`prefix + /`** - Complete word using visible pane content
 - **`prefix + ?`** - Complete word using entire scrollback history (larger word pool)
-- **`prefix + Ctrl+\`** - Alternative binding for scrollback completion
-- **`Alt+/`** - Direct completion (no prefix needed)
-- **`Ctrl+Space`** - Alternative direct completion
 
 ### How It Works
 

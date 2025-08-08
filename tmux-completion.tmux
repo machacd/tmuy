@@ -15,8 +15,3 @@ completion_scrollback_key=${completion_scrollback_key:-"?"}
 # Set up key bindings
 tmux bind-key "$completion_key" run-shell "$CURRENT_DIR/scripts/completion.sh"
 tmux bind-key "$completion_scrollback_key" run-shell "$CURRENT_DIR/scripts/completion.sh --include-scrollback"
-
-# Alternative key bindings
-tmux bind-key "C-\\" run-shell "$CURRENT_DIR/scripts/completion.sh --include-scrollback"
-tmux bind-key -T root "M-/" run-shell "$CURRENT_DIR/scripts/completion.sh"
-tmux bind-key -T root "C-Space" run-shell "$CURRENT_DIR/scripts/completion.sh"
