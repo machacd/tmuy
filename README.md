@@ -2,6 +2,8 @@
 
 A tmux plugin that provides emacs-style word completion with cycling functionality, similar to `Alt+/` in emacs.
 
+![Demo](demo.gif)
+
 ## Features
 
 - **Word completion**: Complete partial words by searching through all panes
