@@ -106,3 +106,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - Ensure there are matching words in your panes
 - Try typing more characters of the word
 - Check that panes contain the expected content
+
+## TODO
+
+- [ ] Show word search time in the status bar
