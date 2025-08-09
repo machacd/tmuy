@@ -83,7 +83,7 @@ fi
 
 # Extract both full paths and components
 grep -oE '[a-zA-Z0-9_/.-]{2,}' "$CACHE_DIR/all_content" > "$CACHE_DIR/full_words"
-grep -oE '[a-zA-Z0-9_/.-]{2,}' "$CACHE_DIR/all_content" | sed 's/[/.-]/\n/g' | grep -E '^[a-zA-Z0-9_]{2,}$' > "$CACHE_DIR/components"
+grep -oE '[a-zA-Z0-9_/.-]{2,}' "$CACHE_DIR/all_content" | sed 's/[/.]/\n/g' | grep -E '^[a-zA-Z0-9_-]{2,}$' > "$CACHE_DIR/components"
 
 # Combine and filter
 cat "$CACHE_DIR/full_words" "$CACHE_DIR/components" | grep "^$search_word" | sort -u | grep -v "^$search_word$" > "$WORDS_FILE"
