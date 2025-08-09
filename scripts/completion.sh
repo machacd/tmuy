@@ -26,7 +26,7 @@ cursor_y=$(tmux display-message -p -t "$pane_id" '#{cursor_y}')
 # Get current line and extract word
 current_line=$(tmux capture-pane -t "$pane_id" -p | sed -n "$((cursor_y + 1))p")
 before_cursor="${current_line:0:$cursor_x}"
-current_word=$(echo "$before_cursor" | grep -oE '[a-zA-Z0-9_/.-]+$' || echo "")
+current_word=$(echo "$before_cursor" | grep -oE '[a-zA-Z0-9_/.=-]+$' || echo "")
 
 if [[ -z "$current_word" ]]; then
     exit 0
@@ -82,8 +82,8 @@ else
 fi
 
 # Extract both full paths and components
-grep -oE '[a-zA-Z0-9_/.-]{2,}' "$CACHE_DIR/all_content" > "$CACHE_DIR/full_words"
-grep -oE '[a-zA-Z0-9_/.-]{2,}' "$CACHE_DIR/all_content" | sed 's/[/.]/\n/g' | grep -E '^[a-zA-Z0-9_-]{2,}$' > "$CACHE_DIR/components"
+grep -oE '[a-zA-Z0-9_/.=-]{2,}' "$CACHE_DIR/all_content" > "$CACHE_DIR/full_words"
+grep -oE '[a-zA-Z0-9_/.=-]{2,}' "$CACHE_DIR/all_content" | sed 's/[/.]/\n/g' | grep -E '^[a-zA-Z0-9_=-]{2,}$' > "$CACHE_DIR/components"
 
 # Combine and filter
 cat "$CACHE_DIR/full_words" "$CACHE_DIR/components" | grep "^$search_word" | sort -u | grep -v "^$search_word$" > "$WORDS_FILE"
